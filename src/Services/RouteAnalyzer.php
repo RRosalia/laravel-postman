@@ -56,6 +56,8 @@ class RouteAnalyzer implements RouteAnalyzerInterface
 
             $formRequest = $formRequestType ? new $formRequestType() : null;
 
+            $description = $this->extractDescription($reflector);
+
             return new RouteInfoDto(
                 uri: $route->uri(),
                 methods: $route->methods(),
@@ -63,7 +65,8 @@ class RouteAnalyzer implements RouteAnalyzerInterface
                 action: $route->getActionMethod(),
                 formRequest: $formRequest,
                 middleware: $route->gatherMiddleware(),
-                isProtected: $this->isProtectedRoute($route)
+                isProtected: $this->isProtectedRoute($route),
+                description: $description,
             );
         } catch (UnsupportedRouteException $e) {
             throw $e;
@@ -158,6 +161,37 @@ class RouteAnalyzer implements RouteAnalyzerInterface
             $authMiddleware,
             $route->gatherMiddleware()
         ));
+    }
+
+    protected function extractDescription(ReflectionFunctionAbstract $reflector): ?string
+    {
+        $docComment = $reflector->getDocComment();
+
+        if (!$docComment) {
+            return null;
+        }
+
+        // Remove the opening /** and closing */
+        $docComment = preg_replace('/^\s*\/\*\*|\*\/\s*$/s', '', $docComment);
+
+        // Remove leading * from each line and collect text lines before any @tag
+        $lines = [];
+        foreach (explode("\n", $docComment) as $line) {
+            $line = preg_replace('/^\s*\*\s?/', '', $line);
+            $line = trim($line);
+
+            // Stop at the first @tag
+            if (str_starts_with($line, '@')) {
+                break;
+            }
+
+            $lines[] = $line;
+        }
+
+        // Trim empty lines from start and end
+        $text = trim(implode("\n", $lines));
+
+        return $text !== '' ? $text : null;
     }
 
     private function isFormRequest(ReflectionParameter $p): bool

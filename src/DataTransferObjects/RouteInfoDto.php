@@ -14,6 +14,7 @@ class RouteInfoDto
         readonly public ?string $action = null,
         readonly public ?FormRequest $formRequest = null,
         readonly public array $middleware = [],
+        readonly public ?string $description = null,
     ) {}
 
     public function getName(): string

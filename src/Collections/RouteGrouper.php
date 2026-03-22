@@ -65,6 +65,10 @@ class RouteGrouper
             ]
         ];
 
+        if ($route->description) {
+            $formatted['request']['description'] = $route->description;
+        }
+
         if ($variable) {
             $formatted['request']['url']['variable'] = [];
             $matches = preg_match('/\{([^}]+)\}/', $route->uri);
